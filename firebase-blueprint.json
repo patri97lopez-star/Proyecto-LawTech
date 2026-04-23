@@ -1,0 +1,107 @@
+{
+  "entities": {
+    "EmailRecord": {
+      "title": "Email Record",
+      "description": "Stored email summaries and drafts",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "subject": { "type": "string" },
+        "type": { "type": "string" },
+        "content": { "type": "string" },
+        "summary": { "type": "string" },
+        "classification": { "type": "string" },
+        "responseDraft": { "type": "string" },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["id", "subject", "type", "content", "userId", "createdAt"]
+    },
+    "JudicialMinute": {
+      "title": "Judicial Minute",
+      "description": "Court proceedings and summaries",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "procedureType": { "type": "string" },
+        "caseNumber": { "type": "string" },
+        "parties": { "type": "string" },
+        "minuteText": { "type": "string" },
+        "summary": { "type": "string" },
+        "legalAnalysis": { "type": "string" },
+        "deadlineRecommendation": { "type": "string" },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["id", "procedureType", "parties", "minuteText", "userId", "createdAt"]
+    },
+    "TenderRecord": {
+      "title": "Tender Record",
+      "description": "Public bidding opportunities",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "organization": { "type": "string" },
+        "tenderText": { "type": "string" },
+        "summaryTable": { "type": "string" },
+        "presentationDraft": { "type": "string" },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["id", "organization", "tenderText", "userId", "createdAt"]
+    },
+    "InvoiceRecord": {
+      "title": "Invoice Record",
+      "description": "Automated billing records",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "invoiceNumber": { "type": "string" },
+        "clientName": { "type": "string" },
+        "items": { "type": "array" },
+        "subtotal": { "type": "number" },
+        "tax": { "type": "number" },
+        "total": { "type": "number" },
+        "status": { "type": "string", "enum": ["draft", "sent", "paid", "overdue"] },
+        "dueDate": { "type": "string" },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["id", "invoiceNumber", "clientName", "items", "total", "userId", "createdAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}/emails": {
+      "schema": "EmailRecord",
+      "description": "User specific email records"
+    },
+    "users/{userId}/minutes": {
+      "schema": "JudicialMinute",
+      "description": "User specific judicial minutes"
+    },
+    "users/{userId}/tenders": {
+      "schema": "TenderRecord",
+      "description": "User specific tender records"
+    },
+    "users/{userId}/invoices": {
+      "schema": "InvoiceRecord",
+      "description": "User specific invoice records"
+    },
+    "users/{userId}/notifications": {
+      "schema": "AppNotification",
+      "description": "User specific notifications"
+    },
+    "users/{userId}/events": {
+      "schema": "CalendarEvent",
+      "description": "User specific calendar events"
+    },
+    "users/{userId}/clients": {
+      "schema": "Client",
+      "description": "User specific client records"
+    },
+    "users/{userId}/cases": {
+      "schema": "LegalCase",
+      "description": "User specific legal case files/expedientes"
+    }
+  }
+}

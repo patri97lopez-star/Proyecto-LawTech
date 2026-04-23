@@ -1,0 +1,184 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Entity Validation Functions ---
+
+    function isValidEmail(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.userId == request.auth.uid &&
+             data.subject is string && data.subject.size() <= 500 &&
+             data.content is string && data.content.size() <= 10000 &&
+             data.createdAt is number;
+    }
+
+    function isValidMinute(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.userId == request.auth.uid &&
+             data.parties is string && data.parties.size() <= 1000 &&
+             data.minuteText is string && data.minuteText.size() <= 10000 &&
+             data.createdAt is number;
+    }
+
+    function isValidTender(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.userId == request.auth.uid &&
+             data.organization is string && data.organization.size() <= 500 &&
+             data.tenderText is string && data.tenderText.size() <= 10000 &&
+             data.createdAt is number;
+    }
+
+    function isValidInvoice(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.userId == request.auth.uid &&
+             data.invoiceNumber is string && data.invoiceNumber.size() <= 50 &&
+             data.clientName is string && data.clientName.size() <= 200 &&
+             data.items is list && data.items.size() <= 100 &&
+             data.total is number &&
+             data.createdAt is number;
+    }
+
+    function isValidNotification(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.userId == request.auth.uid &&
+             data.title is string && data.title.size() <= 200 &&
+             data.message is string && data.message.size() <= 1000 &&
+             data.priority in ['high', 'medium', 'low'] &&
+             data.createdAt is number;
+    }
+
+    function isValidEvent(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.userId == request.auth.uid &&
+             data.title is string && data.title.size() <= 200 &&
+             data.date is string &&
+             data.type in ['appointment', 'deadline', 'hearing', 'task'] &&
+             data.createdAt is number;
+    }
+
+    function isValidClient(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.userId == request.auth.uid &&
+             data.name is string && data.name.size() <= 200 &&
+             data.email is string && data.email.size() <= 200 &&
+             data.createdAt is number;
+    }
+
+    function isValidCase(data) {
+      return data.id is string && data.id.size() <= 128 &&
+             data.userId == request.auth.uid &&
+             data.title is string && data.title.size() <= 300 &&
+             data.referenceNumber is string && data.referenceNumber.size() <= 100 &&
+             data.createdAt is number;
+    }
+
+    // --- Collection Routes ---
+
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+
+      match /emails/{emailId} {
+        allow list: if isOwner(userId);
+        allow get: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidEmail(incoming()) && isValidId(emailId);
+        allow update: if isOwner(userId) && isValidEmail(incoming()) && 
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt;
+        allow delete: if isOwner(userId);
+      }
+
+      match /minutes/{minuteId} {
+        allow list: if isOwner(userId);
+        allow get: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidMinute(incoming()) && isValidId(minuteId);
+        allow update: if isOwner(userId) && isValidMinute(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt;
+        allow delete: if isOwner(userId);
+      }
+
+      match /tenders/{tenderId} {
+        allow list: if isOwner(userId);
+        allow get: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidTender(incoming()) && isValidId(tenderId);
+        allow update: if isOwner(userId) && isValidTender(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt;
+        allow delete: if isOwner(userId);
+      }
+
+      match /invoices/{invoiceId} {
+        allow list: if isOwner(userId);
+        allow get: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidInvoice(incoming()) && isValidId(invoiceId);
+        allow update: if isOwner(userId) && isValidInvoice(incoming()) &&
+                         (incoming().diff(existing()).affectedKeys().hasOnly(['status', 'dueDate', 'items', 'total', 'subtotal', 'tax'])) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt;
+        allow delete: if isOwner(userId);
+      }
+
+      match /notifications/{notificationId} {
+        allow list: if isOwner(userId);
+        allow get: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidNotification(incoming()) && isValidId(notificationId);
+        allow update: if isOwner(userId) && isValidNotification(incoming()) &&
+                         incoming().userId == existing().userId;
+        allow delete: if isOwner(userId);
+      }
+
+      match /events/{eventId} {
+        allow list: if isOwner(userId);
+        allow get: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidEvent(incoming()) && isValidId(eventId);
+        allow update: if isOwner(userId) && isValidEvent(incoming()) &&
+                         incoming().userId == existing().userId;
+        allow delete: if isOwner(userId);
+      }
+
+      match /clients/{clientId} {
+        allow list: if isOwner(userId);
+        allow get: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidClient(incoming()) && isValidId(clientId);
+        allow update: if isOwner(userId) && isValidClient(incoming()) &&
+                         incoming().userId == existing().userId;
+        allow delete: if isOwner(userId);
+      }
+
+      match /cases/{caseId} {
+        allow list: if isOwner(userId);
+        allow get: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidCase(incoming()) && isValidId(caseId);
+        allow update: if isOwner(userId) && isValidCase(incoming()) &&
+                         incoming().userId == existing().userId;
+        allow delete: if isOwner(userId);
+      }
+    }
+  }
+}
